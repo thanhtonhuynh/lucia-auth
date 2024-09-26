@@ -21,6 +21,7 @@ export const lucia = new Lucia(adapter, {
       name: databaseUserAttributes.name,
       image: databaseUserAttributes.image,
       googleId: databaseUserAttributes.googleId,
+      role: databaseUserAttributes.role,
     };
   },
 });
@@ -38,6 +39,7 @@ interface DatabaseUserAttributes {
   name: string;
   image: string | null;
   googleId: string | null;
+  role: string | null;
 }
 
 export const validateRequest = cache(
