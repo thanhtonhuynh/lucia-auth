@@ -1,7 +1,12 @@
 import Link from 'next/link';
 import { SignUpForm } from './SignUpForm';
+import { validateRequest } from '@/auth';
+import { redirect } from 'next/navigation';
 
-export default function Page() {
+export default async function Page() {
+  const { user } = await validateRequest();
+  if (user) redirect('/');
+
   return (
     <main className="flex h-[90vh] items-center justify-center">
       <div className="flex h-full max-h-[30rem] w-full max-w-[32rem] bg-card rounded-xl shadow-xl flex-col items-center justify-center space-y-4">
