@@ -3,6 +3,9 @@ import localFont from 'next/font/local';
 import './globals.css';
 import NavBar from '@/components/NavBar';
 import { Toaster } from '@/components/ui/toaster';
+import { auth } from '@/auth';
+import { SessionProvider } from '@/contexts/SessionProvider';
+import NavBarClient from '@/components/NavBar-client';
 
 const geistSans = localFont({
   src: '../../fonts/GeistVF.woff',
@@ -19,19 +22,24 @@ export const metadata: Metadata = {
   title: 'Lucia Auth',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { session, user } = await auth();
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NavBar />
-        {children}
-        <Toaster />
+        <SessionProvider value={{ session, user }}>
+          {/* <NavBar /> */}
+          <NavBarClient />
+          {children}
+          <Toaster />
+        </SessionProvider>
       </body>
     </html>
   );
