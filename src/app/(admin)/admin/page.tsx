@@ -1,8 +1,8 @@
-import { validateRequest } from '@/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 
 export default async function Page() {
-  const { user } = await validateRequest();
+  const { user } = await auth();
 
   if (!user) {
     redirect('/login');

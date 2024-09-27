@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { validateRequest } from '@/auth';
+import { auth } from '@/auth';
 import UserButton from './UserButton';
 import { Button } from './ui/button';
 
 export default async function NavBar() {
-  const { user } = await validateRequest();
+  const { user } = await auth();
 
   return (
     <header className="sticky top-0 bg-background px-3 shadow-sm">

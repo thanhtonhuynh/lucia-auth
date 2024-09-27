@@ -1,11 +1,11 @@
 'use server';
 
-import { lucia, validateRequest } from '@/auth';
+import { auth, lucia } from '@/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export async function logout() {
-  const { session } = await validateRequest();
+  const { session } = await auth();
   if (!session) {
     throw new Error('Unauthorized');
   }
