@@ -4,7 +4,6 @@ import { lucia } from '@/auth';
 import prisma from '@/lib/prisma';
 import { signUpSchema, SignUpValues } from '@/lib/validation';
 import { hash } from '@node-rs/argon2';
-import { generateIdFromEntropySize } from 'lucia';
 import { isRedirectError } from 'next/dist/client/components/redirect';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -21,7 +20,6 @@ export async function signUp(
       outputLen: 32,
       parallelism: 1,
     });
-    const userId = generateIdFromEntropySize(10);
 
     const existingEmail = await prisma.user.findFirst({
       where: {
@@ -35,16 +33,15 @@ export async function signUp(
       return { error: 'Email already in use' };
     }
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
-        id: userId,
         name: email.split('@')[0],
         email,
         passwordHash,
       },
     });
 
-    const session = await lucia.createSession(userId, {});
+    const session = await lucia.createSession(user.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
     cookies().set(
       sessionCookie.name,
