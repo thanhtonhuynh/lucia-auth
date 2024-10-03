@@ -11,19 +11,18 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { UpdateProfileValues, updateProfileSchema } from '@/lib/validation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { updateProfile } from './actions';
 import { User } from 'lucia';
+import { toast } from 'sonner';
 
 type SettingsPageProps = {
   user: User;
 };
 
 export default function SettingsPage({ user }: SettingsPageProps) {
-  const { toast } = useToast();
   const form = useForm<UpdateProfileValues>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: { name: user.name || '' },
@@ -32,12 +31,9 @@ export default function SettingsPage({ user }: SettingsPageProps) {
   async function onSubmit(values: UpdateProfileValues) {
     try {
       await updateProfile(values);
-      toast({ description: 'Profile updated.' });
+      toast.success('Profile updated.');
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        description: 'An error occurred. Please try again.',
-      });
+      toast.error('An error occurred. Please try again.');
     }
   }
 

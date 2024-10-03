@@ -38,7 +38,7 @@ export default async function RootLayout({
           {/* <NavBar /> */}
           <NavBarClient />
           {children}
-          <Toaster />
+          <Toaster richColors />
         </SessionProvider>
       </body>
     </html>
