@@ -18,6 +18,7 @@ import { LoadingButton } from '@/components/LoadingButton';
 import { PasswordInput } from '@/components/PasswordInput';
 import { ErrorMessage } from '@/components/Message';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export function LoginForm() {
   const [error, setError] = useState<string>();
@@ -66,7 +67,15 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel className="flex items-center justify-between">
+                Password
+                <Link
+                  className="text-xs text-blue-500 hover:underline"
+                  href="/reset-password"
+                >
+                  Forgot password?
+                </Link>
+              </FormLabel>
               <FormControl>
                 <PasswordInput {...field} placeholder="Password" />
               </FormControl>

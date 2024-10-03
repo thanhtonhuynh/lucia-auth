@@ -7,21 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// model User {
-//   id           String  @id @default(auto()) @map("_id") @db.ObjectId
-//   name         String
-//   email        String? @unique
-//   passwordHash String?
-//   googleId     String? @unique
-//   image        String?
-//   role         String?
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   sessions Session[]
-// }
-
 model User {
   id            String  @id @default(auto()) @map("_id") @db.ObjectId
   name          String
@@ -34,9 +19,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions          Session[]
-  accounts          Account[]
-  verificationCodes VerificationCode[]
+  sessions            Session[]
+  accounts            Account[]
+  verificationCodes   VerificationCode[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Account {
@@ -63,6 +49,17 @@ model VerificationCode {
   userId    String   @unique @db.ObjectId
   code      String
   email     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  // id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  tokenHash String   @id @map("_id")
+  userId    String   @unique @db.ObjectId
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

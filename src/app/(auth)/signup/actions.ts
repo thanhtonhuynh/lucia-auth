@@ -4,7 +4,6 @@ import prisma from '@/lib/prisma';
 import { signUpSchema, SignUpValues } from '@/lib/validation';
 import { hash } from '@node-rs/argon2';
 import { User } from 'lucia';
-import { isRedirectError } from 'next/dist/client/components/redirect';
 import { sendEmailVerificationCode } from '../verify-email/actions';
 
 export async function signUp(
@@ -44,8 +43,6 @@ export async function signUp(
 
     return { success: true, user };
   } catch (error) {
-    if (isRedirectError(error)) throw error;
-
     console.error(error);
     return { error: 'Something went wrong. Please try again.' };
   }
