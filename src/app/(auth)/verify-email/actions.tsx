@@ -12,7 +12,6 @@ import { User } from 'lucia';
 import { isRedirectError } from 'next/dist/client/components/redirect';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { isWithinExpirationDate } from 'oslo';
 import { alphabet, generateRandomString } from 'oslo/crypto';
 import VerificationCodeEmail from '@/components/email/VerificationCodeEmail';
 
@@ -52,20 +51,20 @@ export async function verifyEmail(
 
 async function verifyVerificationCode(user: User, code: string) {
   const databaseCode = await prisma.verificationCode.findFirst({
-    where: { userId: user.id },
+    where: {
+      userId: user.id,
+      expiresAt: { gte: new Date() },
+    },
   });
 
-  if (!databaseCode || databaseCode.code !== code) {
-    return false;
-  }
+  if (databaseCode)
+    await prisma.verificationCode.delete({ where: { userId: user.id } });
 
-  await prisma.verificationCode.delete({ where: { id: databaseCode.id } });
-
-  if (!isWithinExpirationDate(databaseCode.expiresAt)) {
-    return false;
-  }
-
-  if (databaseCode.email !== user.email) {
+  if (
+    !databaseCode ||
+    databaseCode.code !== code ||
+    databaseCode.email !== user.email
+  ) {
     return false;
   }
 

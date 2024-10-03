@@ -33,3 +33,18 @@ export const forgotPasswordSchema = z.object({
   email: requiredString.email('Invalid email address'),
 });
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
+
+// Reset password
+export const resetPasswordSchema = z
+  .object({
+    password: requiredString.min(8, 'Password must be at least 8 characters'),
+    confirmPassword: requiredString.min(
+      8,
+      'Password must be at least 8 characters'
+    ),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;

@@ -30,7 +30,7 @@ async function createPasswordResetToken(userId: string) {
   return token;
 }
 
-export async function resetPassword(values: ForgotPasswordValues) {
+export async function sendPasswordResetEmail(values: ForgotPasswordValues) {
   try {
     const { email } = forgotPasswordSchema.parse(values);
 
