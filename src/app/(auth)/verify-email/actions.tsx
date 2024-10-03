@@ -7,12 +7,14 @@ import {
   verificationCodeSchema,
   VerificationCodeValues,
 } from '@/lib/validation';
+import { render } from '@react-email/components';
 import { User } from 'lucia';
 import { isRedirectError } from 'next/dist/client/components/redirect';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { isWithinExpirationDate } from 'oslo';
 import { alphabet, generateRandomString } from 'oslo/crypto';
+import VerificationCodeEmail from '@/components/email/VerificationCodeEmail';
 
 export async function verifyEmail(
   values: VerificationCodeValues,
@@ -105,13 +107,12 @@ export async function sendEmailVerificationCode(userId: string, email: string) {
     },
   });
 
+  const emailHtml = await render(<VerificationCodeEmail code={code} />);
+
   await sendEmail({
     to: email,
     subject: 'Email Verification Code',
-    html: `
-      <h1>Verification Code</h1>
-      <p>Your verification code is: <strong>${code}</strong></p>
-    `,
+    html: emailHtml,
   });
 
   return code;
