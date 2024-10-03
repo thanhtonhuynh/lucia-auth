@@ -114,6 +114,4 @@ export async function sendEmailVerificationCode(userId: string, email: string) {
     subject: 'Email Verification Code',
     html: emailHtml,
   });
-
-  return code;
 }
