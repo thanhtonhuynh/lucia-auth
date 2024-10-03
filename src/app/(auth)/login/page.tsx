@@ -10,10 +10,10 @@ export default async function Page() {
 
   return (
     <main className="flex h-[90vh] items-center justify-center">
-      <div className="flex py-8 max-h-[40rem] w-full max-w-[32rem] bg-card rounded-xl shadow-xl flex-col items-center justify-center space-y-4">
+      <div className="flex p-4 py-8 h-full max-h-[35rem] w-full max-w-[40rem] bg-card rounded-xl shadow-xl flex-col items-center justify-center space-y-4">
         <h1 className="font-bold text-3xl">Login</h1>
 
-        <div className="flex flex-col space-y-4 w-2/3">
+        <div className="flex flex-col space-y-4 w-1/2">
           <GoogleSignInButton />
 
           <div className="flex items-center justify-center space-x-4">

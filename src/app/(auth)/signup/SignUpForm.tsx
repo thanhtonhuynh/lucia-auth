@@ -17,6 +17,8 @@ import { signUp } from './actions';
 import { PasswordInput } from '@/components/PasswordInput';
 import { LoadingButton } from '@/components/LoadingButton';
 import { ErrorMessage } from '@/components/Message';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export function SignUpForm() {
   const [error, setError] = useState<string>();
@@ -28,19 +30,27 @@ export function SignUpForm() {
       password: '',
     },
   });
+  const router = useRouter();
 
   async function onSubmit(values: SignUpValues) {
     setError(undefined);
     startTransition(async () => {
-      const { error } = await signUp(values);
+      const { error, success, user } = await signUp(values);
 
       if (error) setError(error);
+      if (success)
+        router.push(
+          `/verify-email?userId=${user?.id}&email=${user?.email}&redirectFrom=signup`
+        );
     });
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col w-1/2 space-y-4"
+      >
         {error && <ErrorMessage message={error} />}
 
         <FormField

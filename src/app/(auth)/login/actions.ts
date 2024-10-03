@@ -7,10 +7,11 @@ import { verify } from '@node-rs/argon2';
 import { lucia } from '@/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { User } from 'lucia';
 
 export async function login(
   credentials: LoginValues
-): Promise<{ error: string }> {
+): Promise<{ error?: string; verifiedUser?: boolean; user?: User }> {
   try {
     const { email, password } = loginSchema.parse(credentials);
 
@@ -34,6 +35,13 @@ export async function login(
     });
     if (!validPassword) {
       return { error: 'Invalid email or password' };
+    }
+
+    if (!existingUser.emailVerified) {
+      return {
+        verifiedUser: false,
+        user: existingUser as User,
+      };
     }
 
     const session = await lucia.createSession(existingUser.id, {});

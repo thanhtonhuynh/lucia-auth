@@ -1,16 +1,15 @@
 'use server';
 
-import { lucia } from '@/auth';
 import prisma from '@/lib/prisma';
 import { signUpSchema, SignUpValues } from '@/lib/validation';
 import { hash } from '@node-rs/argon2';
+import { User } from 'lucia';
 import { isRedirectError } from 'next/dist/client/components/redirect';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { sendEmailVerificationCode } from '../verify-email/actions';
 
 export async function signUp(
   credentials: SignUpValues
-): Promise<{ error: string }> {
+): Promise<{ error?: string; success?: boolean; user?: User }> {
   try {
     const { email, password } = signUpSchema.parse(credentials);
 
@@ -33,7 +32,7 @@ export async function signUp(
       return { error: 'Email already in use' };
     }
 
-    const user = await prisma.user.create({
+    const user: User = await prisma.user.create({
       data: {
         name: email.split('@')[0],
         email,
@@ -41,15 +40,9 @@ export async function signUp(
       },
     });
 
-    const session = await lucia.createSession(user.id, {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    cookies().set(
-      sessionCookie.name,
-      sessionCookie.value,
-      sessionCookie.attributes
-    );
+    await sendEmailVerificationCode(user.id, email);
 
-    redirect('/');
+    return { success: true, user };
   } catch (error) {
     if (isRedirectError(error)) throw error;
 

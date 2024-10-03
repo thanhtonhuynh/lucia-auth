@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { LoadingButton } from '@/components/LoadingButton';
 import { PasswordInput } from '@/components/PasswordInput';
 import { ErrorMessage } from '@/components/Message';
+import { useRouter } from 'next/navigation';
 
 export function LoginForm() {
   const [error, setError] = useState<string>();
@@ -28,19 +29,22 @@ export function LoginForm() {
       password: '',
     },
   });
+  const router = useRouter();
 
   async function onSubmit(values: LoginValues) {
     setError(undefined);
     startTransition(async () => {
-      const { error } = await login(values);
+      const { error, verifiedUser, user } = await login(values);
 
       if (error) setError(error);
+      if (verifiedUser === false)
+        router.push(`/verify-email?userId=${user?.id}&email=${user?.email}`);
     });
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {error && <ErrorMessage message={error} />}
 
         <FormField
