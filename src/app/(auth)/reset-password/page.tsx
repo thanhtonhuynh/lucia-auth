@@ -1,8 +1,10 @@
 import { cookies } from 'next/headers';
 import { ResetPasswordForm } from './ResetPasswordForm';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
   const token = cookies().get('resetToken')?.value;
+  if (!token) redirect('/login/forgot-password');
 
   return (
     <main className="flex h-[90vh] items-center justify-center">
@@ -10,7 +12,7 @@ export default function Page() {
         <h1 className="font-bold text-3xl">Enter new password</h1>
 
         <div className="flex flex-col space-y-4 w-1/2">
-          <ResetPasswordForm token={token || ''} />
+          <ResetPasswordForm />
         </div>
       </div>
     </main>

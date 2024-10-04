@@ -37,7 +37,6 @@ export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 // Reset password
 export const resetPasswordSchema = z
   .object({
-    token: requiredString,
     password: requiredString.min(8, 'Password must be at least 8 characters'),
     confirmPassword: requiredString.min(
       8,

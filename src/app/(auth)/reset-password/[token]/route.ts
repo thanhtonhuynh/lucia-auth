@@ -5,7 +5,7 @@ export async function GET(
   req: Request,
   { params }: { params: { token: string } }
 ) {
-  const token = params.token;
+  const { token } = params;
 
   cookies().set('resetToken', token, {
     httpOnly: true,

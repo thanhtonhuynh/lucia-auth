@@ -11,7 +11,10 @@ import { redirect } from 'next/navigation';
 
 export async function resetPassword(values: ResetPasswordValues) {
   try {
-    const { token, password } = resetPasswordSchema.parse(values);
+    // get token from cookie
+    const token = cookies().get('resetToken')?.value;
+
+    const { password } = resetPasswordSchema.parse(values);
 
     // validate token
     const tokenHash = encodeHex(await sha256(new TextEncoder().encode(token)));
@@ -50,6 +53,7 @@ export async function resetPassword(values: ResetPasswordValues) {
       sessionCookie.value,
       sessionCookie.attributes
     );
+    cookies().delete('resetToken');
   } catch (error) {
     console.error(error);
     return { error: 'Something went wrong' };

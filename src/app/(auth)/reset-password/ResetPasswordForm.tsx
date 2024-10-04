@@ -17,7 +17,7 @@ import { ErrorMessage } from '@/components/Message';
 import { LoadingButton } from '@/components/LoadingButton';
 import { PasswordInput } from '@/components/PasswordInput';
 
-export function ResetPasswordForm({ token }: { token: string }) {
+export function ResetPasswordForm() {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
   const form = useForm<ResetPasswordValues>({
@@ -25,7 +25,6 @@ export function ResetPasswordForm({ token }: { token: string }) {
     defaultValues: {
       password: '',
       confirmPassword: '',
-      token: token,
     },
   });
 
