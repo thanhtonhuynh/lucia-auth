@@ -2,7 +2,6 @@
 
 import { resetPasswordSchema, ResetPasswordValues } from '@/lib/validation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { resetPassword } from './actions';
@@ -18,8 +17,7 @@ import { ErrorMessage } from '@/components/Message';
 import { LoadingButton } from '@/components/LoadingButton';
 import { PasswordInput } from '@/components/PasswordInput';
 
-export function ResetPasswordForm() {
-  const { token } = useParams();
+export function ResetPasswordForm({ token }: { token: string }) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
   const form = useForm<ResetPasswordValues>({
@@ -27,13 +25,14 @@ export function ResetPasswordForm() {
     defaultValues: {
       password: '',
       confirmPassword: '',
+      token: token,
     },
   });
 
   async function onSubmit(values: ResetPasswordValues) {
     setError(undefined);
     startTransition(async () => {
-      const { error } = await resetPassword(values, token as string);
+      const { error } = await resetPassword(values);
 
       if (error) setError(error);
     });

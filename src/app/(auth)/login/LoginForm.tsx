@@ -71,7 +71,7 @@ export function LoginForm() {
                 Password
                 <Link
                   className="text-xs text-blue-500 hover:underline"
-                  href="/reset-password"
+                  href="/login/forgot-password"
                 >
                   Forgot password?
                 </Link>

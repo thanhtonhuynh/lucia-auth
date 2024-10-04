@@ -1,67 +1,59 @@
 'use server';
 
+import { lucia } from '@/auth';
 import prisma from '@/lib/prisma';
-import { generateIdFromEntropySize } from 'lucia';
-import { encodeHex } from 'oslo/encoding';
+import { resetPasswordSchema, ResetPasswordValues } from '@/lib/validation';
 import { sha256 } from 'oslo/crypto';
-import { TimeSpan, createDate } from 'oslo';
-import { forgotPasswordSchema, ForgotPasswordValues } from '@/lib/validation';
-import { sendEmail } from '@/lib/email';
+import { encodeHex } from 'oslo/encoding';
+import { hash } from '@node-rs/argon2';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-async function createPasswordResetToken(userId: string) {
-  // invalidate any existing tokens
-  await prisma.passwordResetToken.deleteMany({
-    where: { userId },
-  });
-
-  // create new token
-  const token = generateIdFromEntropySize(25); // 40 characters
-  const tokenHash = encodeHex(await sha256(new TextEncoder().encode(token)));
-
-  // save token to database
-  await prisma.passwordResetToken.create({
-    data: {
-      userId,
-      tokenHash,
-      expiresAt: createDate(new TimeSpan(2, 'h')),
-    },
-  });
-
-  return token;
-}
-
-export async function sendPasswordResetEmail(values: ForgotPasswordValues) {
+export async function resetPassword(values: ResetPasswordValues) {
   try {
-    const { email } = forgotPasswordSchema.parse(values);
+    const { token, password } = resetPasswordSchema.parse(values);
 
-    const user = await prisma.user.findFirst({
+    // validate token
+    const tokenHash = encodeHex(await sha256(new TextEncoder().encode(token)));
+    const dbToken = await prisma.passwordResetToken.findFirst({
       where: {
-        email: {
-          equals: email,
-          mode: 'insensitive',
+        tokenHash,
+        expiresAt: {
+          gte: new Date(),
         },
       },
     });
-    if (!user) {
-      return { success: true };
+
+    if (dbToken)
+      await prisma.passwordResetToken.delete({ where: { tokenHash } });
+
+    if (!dbToken) {
+      return { error: 'Invalid or expired token' };
     }
 
-    const token = await createPasswordResetToken(user.id);
-    const verificationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password/${token}`;
-
-    // send email with verification link
-    await sendEmail({
-      to: email,
-      subject: 'Reset your password',
-      html: `
-        <p>Click the link below to reset your password:</p>
-        <a href="${verificationLink}">${verificationLink}</a>
-      `,
+    await lucia.invalidateUserSessions(dbToken.userId);
+    const passwordHash = await hash(password, {
+      memoryCost: 19456,
+      timeCost: 2,
+      outputLen: 32,
+      parallelism: 1,
+    });
+    await prisma.user.update({
+      where: { id: dbToken.userId },
+      data: { passwordHash },
     });
 
-    return { success: true };
+    const session = await lucia.createSession(dbToken.userId, {});
+    const sessionCookie = lucia.createSessionCookie(session.id);
+    cookies().set(
+      sessionCookie.name,
+      sessionCookie.value,
+      sessionCookie.attributes
+    );
   } catch (error) {
     console.error(error);
-    return { error: 'Something went wrong. Please try again.' };
+    return { error: 'Something went wrong' };
   }
+
+  redirect('/');
 }
