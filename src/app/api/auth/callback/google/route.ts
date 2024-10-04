@@ -1,5 +1,6 @@
 import { google, lucia } from '@/auth';
 import prisma from '@/lib/prisma';
+import { setSession } from '@/lib/session';
 import { OAuth2RequestError } from 'arctic';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
@@ -8,17 +9,6 @@ interface GoogleUser {
   id: string;
   email: string;
   name: string;
-}
-
-async function handleSessionCookie(userId: string) {
-  const session = await lucia.createSession(userId, {});
-  const sessionCookie = lucia.createSessionCookie(session.id);
-  cookies().set(
-    sessionCookie.name,
-    sessionCookie.value,
-    sessionCookie.attributes
-  );
-  return new Response(null, { status: 302, headers: { Location: '/' } });
 }
 
 export async function GET(req: NextRequest) {
@@ -59,7 +49,8 @@ export async function GET(req: NextRequest) {
       where: { providerId: googleUser.id },
     });
     if (existingAccount) {
-      return handleSessionCookie(existingAccount.userId);
+      await setSession(existingAccount.userId);
+      return new Response(null, { status: 302, headers: { Location: '/' } });
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -74,7 +65,8 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      return handleSessionCookie(existingUser.id);
+      await setSession(existingUser.id);
+      return new Response(null, { status: 302, headers: { Location: '/' } });
     }
 
     const newUser = await prisma.user.create({
@@ -89,7 +81,9 @@ export async function GET(req: NextRequest) {
         },
       },
     });
-    return handleSessionCookie(newUser.id);
+
+    await setSession(newUser.id);
+    return new Response(null, { status: 302, headers: { Location: '/' } });
   } catch (error) {
     console.error(error);
     if (error instanceof OAuth2RequestError) {

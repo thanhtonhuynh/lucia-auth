@@ -1,6 +1,5 @@
 'use server';
 
-import { lucia } from '@/auth';
 import { sendEmail } from '@/lib/email';
 import prisma from '@/lib/prisma';
 import {
@@ -10,10 +9,10 @@ import {
 import { render } from '@react-email/components';
 import { User } from 'lucia';
 import { isRedirectError } from 'next/dist/client/components/redirect';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { alphabet, generateRandomString } from 'oslo/crypto';
 import VerificationCodeEmail from '@/components/email/VerificationCodeEmail';
+import { setSession } from '@/lib/session';
 
 export async function verifyEmail(
   values: VerificationCodeValues,
@@ -32,13 +31,7 @@ export async function verifyEmail(
       data: { emailVerified: true },
     });
 
-    const session = await lucia.createSession(user.id, {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    cookies().set(
-      sessionCookie.name,
-      sessionCookie.value,
-      sessionCookie.attributes
-    );
+    await setSession(user.id);
 
     redirect('/');
   } catch (error) {

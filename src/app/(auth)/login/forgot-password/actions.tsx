@@ -7,6 +7,9 @@ import { sha256 } from 'oslo/crypto';
 import { TimeSpan, createDate } from 'oslo';
 import { forgotPasswordSchema, ForgotPasswordValues } from '@/lib/validation';
 import { sendEmail } from '@/lib/email';
+import { getUserByEmail } from '@/data/users';
+import { render } from '@react-email/components';
+import ResetPasswordEmail from '@/components/email/ResetPasswordEmail';
 
 async function createPasswordResetToken(userId: string) {
   // invalidate any existing tokens
@@ -34,29 +37,18 @@ export async function sendPasswordResetEmail(values: ForgotPasswordValues) {
   try {
     const { email } = forgotPasswordSchema.parse(values);
 
-    const user = await prisma.user.findFirst({
-      where: {
-        email: {
-          equals: email,
-          mode: 'insensitive',
-        },
-      },
-    });
-    if (!user) {
-      return { success: true };
-    }
+    const user = await getUserByEmail(email);
+    if (!user) return { success: true };
 
     const token = await createPasswordResetToken(user.id);
-    const verificationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password/${token}`;
+
+    const emailHtml = await render(<ResetPasswordEmail token={token} />);
 
     // send email with verification link
     await sendEmail({
       to: email,
-      subject: 'Reset your password',
-      html: `
-        <p>Click the link below to reset your password:</p>
-        <a href="${verificationLink}">${verificationLink}</a>
-      `,
+      subject: 'Reset password request',
+      html: emailHtml,
     });
 
     return { success: true };

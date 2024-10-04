@@ -8,6 +8,7 @@ import { encodeHex } from 'oslo/encoding';
 import { hash } from '@node-rs/argon2';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { setSession } from '@/lib/session';
 
 export async function resetPassword(values: ResetPasswordValues) {
   try {
@@ -46,13 +47,7 @@ export async function resetPassword(values: ResetPasswordValues) {
       data: { passwordHash },
     });
 
-    const session = await lucia.createSession(dbToken.userId, {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    cookies().set(
-      sessionCookie.name,
-      sessionCookie.value,
-      sessionCookie.attributes
-    );
+    await setSession(dbToken.userId);
     cookies().delete('resetToken');
   } catch (error) {
     console.error(error);
