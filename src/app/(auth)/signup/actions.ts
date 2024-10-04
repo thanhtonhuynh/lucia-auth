@@ -5,6 +5,7 @@ import { signUpSchema, SignUpValues } from '@/lib/validation';
 import { hash } from '@node-rs/argon2';
 import { User } from 'lucia';
 import { sendEmailVerificationCode } from '../verify-email/actions';
+import { getUserByEmail } from '@/data/users';
 
 export async function signUp(
   credentials: SignUpValues
@@ -19,14 +20,7 @@ export async function signUp(
       parallelism: 1,
     });
 
-    const existingEmail = await prisma.user.findFirst({
-      where: {
-        email: {
-          equals: email,
-          mode: 'insensitive',
-        },
-      },
-    });
+    const existingEmail = await getUserByEmail(email);
     if (existingEmail) {
       return { error: 'Email already in use' };
     }

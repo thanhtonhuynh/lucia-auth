@@ -1,29 +1,19 @@
-import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { VerifyEmailForm } from './VerifyEmailForm';
 import { SuccessMessage } from '@/components/Message';
-import { cache } from 'react';
+import { getUserByEmail } from '@/data/users';
 
 type PageProps = {
   searchParams: {
-    userId: string;
     email: string;
     redirectFrom?: string;
   };
 };
 
-const getUser = cache(async (userId: string) => {
-  try {
-    return await prisma.user.findUnique({ where: { id: userId } });
-  } catch (error) {
-    redirect('/');
-  }
-});
-
 export default async function Page({
-  searchParams: { userId, email, redirectFrom },
+  searchParams: { email, redirectFrom },
 }: PageProps) {
-  const user = await getUser(userId);
+  const user = await getUserByEmail(email);
   if (!user || user.email !== email || user.emailVerified) {
     redirect('/');
   }

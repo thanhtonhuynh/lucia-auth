@@ -8,11 +8,12 @@ import {
 } from '@/lib/validation';
 import { render } from '@react-email/components';
 import { User } from 'lucia';
-import { isRedirectError } from 'next/dist/client/components/redirect';
 import { redirect } from 'next/navigation';
 import { alphabet, generateRandomString } from 'oslo/crypto';
 import VerificationCodeEmail from '@/components/email/VerificationCodeEmail';
 import { setSession } from '@/lib/session';
+import { verifyVerificationCode } from '@/data/verify-email';
+import { getUserByEmail, updateUser } from '@/data/users';
 
 export async function verifyEmail(
   values: VerificationCodeValues,
@@ -26,46 +27,19 @@ export async function verifyEmail(
       return { error: 'Invalid verification code' };
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { emailVerified: true },
-    });
+    await updateUser(user.id, { emailVerified: true });
 
     await setSession(user.id);
-
-    redirect('/');
   } catch (error) {
-    if (isRedirectError(error)) throw error;
-
     console.error(error);
     return { error: 'Something went wrong. Please try again.' };
   }
-}
 
-async function verifyVerificationCode(user: User, code: string) {
-  const databaseCode = await prisma.verificationCode.findFirst({
-    where: {
-      userId: user.id,
-      expiresAt: { gte: new Date() },
-    },
-  });
-
-  if (databaseCode)
-    await prisma.verificationCode.delete({ where: { userId: user.id } });
-
-  if (
-    !databaseCode ||
-    databaseCode.code !== code ||
-    databaseCode.email !== user.email
-  ) {
-    return false;
-  }
-
-  return true;
+  redirect('/');
 }
 
 export async function sendEmailVerificationCode(userId: string, email: string) {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await getUserByEmail(email);
   if (!user || user.email !== email || user.emailVerified) {
     throw new Error('Invalid request');
   }

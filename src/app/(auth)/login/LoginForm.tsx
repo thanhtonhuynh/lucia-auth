@@ -39,7 +39,7 @@ export function LoginForm() {
 
       if (error) setError(error);
       if (verifiedUser === false)
-        router.push(`/verify-email?userId=${user?.id}&email=${user?.email}`);
+        router.push(`/verify-email?email=${user?.email}`);
     });
   }
 

@@ -17,7 +17,6 @@ import { signUp } from './actions';
 import { PasswordInput } from '@/components/PasswordInput';
 import { LoadingButton } from '@/components/LoadingButton';
 import { ErrorMessage } from '@/components/Message';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export function SignUpForm() {
@@ -39,9 +38,7 @@ export function SignUpForm() {
 
       if (error) setError(error);
       if (success)
-        router.push(
-          `/verify-email?userId=${user?.id}&email=${user?.email}&redirectFrom=signup`
-        );
+        router.push(`/verify-email?email=${user?.email}&redirectFrom=signup`);
     });
   }
 
