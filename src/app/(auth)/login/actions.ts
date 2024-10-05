@@ -1,11 +1,10 @@
 'use server';
 
-import prisma from '@/lib/prisma';
 import { loginSchema, LoginValues } from '@/lib/validation';
-import { verify } from '@node-rs/argon2';
 import { redirect } from 'next/navigation';
 import { User } from 'lucia';
 import { setSession } from '@/lib/session';
+import { getUserByEmail, verifyPassword } from '@/data/users';
 
 export async function login(
   credentials: LoginValues
@@ -13,24 +12,15 @@ export async function login(
   try {
     const { email, password } = loginSchema.parse(credentials);
 
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        email: {
-          equals: email,
-          mode: 'insensitive',
-        },
-      },
-    });
+    const existingUser = await getUserByEmail(email);
     if (!existingUser || !existingUser.passwordHash) {
       return { error: 'Invalid email or password' };
     }
 
-    const validPassword = await verify(existingUser.passwordHash, password, {
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1,
-    });
+    const validPassword = await verifyPassword(
+      existingUser.passwordHash,
+      password
+    );
     if (!validPassword) {
       return { error: 'Invalid email or password' };
     }

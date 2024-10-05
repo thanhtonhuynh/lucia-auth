@@ -1,4 +1,4 @@
-import { google, lucia } from '@/auth';
+import { google } from '@/auth';
 import prisma from '@/lib/prisma';
 import { setSession } from '@/lib/session';
 import { OAuth2RequestError } from 'arctic';
@@ -48,14 +48,17 @@ export async function GET(req: NextRequest) {
     const existingAccount = await prisma.account.findFirst({
       where: { providerId: googleUser.id },
     });
+    // If the user already has an account, log them in
     if (existingAccount) {
       await setSession(existingAccount.userId);
       return new Response(null, { status: 302, headers: { Location: '/' } });
     }
 
+    // If the user doesn't have an account, check if there's a user with the same email
     const existingUser = await prisma.user.findUnique({
       where: { email: googleUser.email },
     });
+    // If there's a user with the same email, link the Google account to the user
     if (existingUser) {
       await prisma.account.create({
         data: {
@@ -69,6 +72,7 @@ export async function GET(req: NextRequest) {
       return new Response(null, { status: 302, headers: { Location: '/' } });
     }
 
+    // If there's no user with the same email, create a new user and link the Google account
     const newUser = await prisma.user.create({
       data: {
         name: googleUser.name,

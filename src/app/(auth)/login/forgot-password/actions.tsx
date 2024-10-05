@@ -12,14 +12,14 @@ import { render } from '@react-email/components';
 import ResetPasswordEmail from '@/components/email/ResetPasswordEmail';
 
 async function createPasswordResetToken(userId: string) {
+  // create new token
+  const token = generateIdFromEntropySize(25); // 40 characters
+  const tokenHash = encodeHex(await sha256(new TextEncoder().encode(token)));
+
   // invalidate any existing tokens
   await prisma.passwordResetToken.deleteMany({
     where: { userId },
   });
-
-  // create new token
-  const token = generateIdFromEntropySize(25); // 40 characters
-  const tokenHash = encodeHex(await sha256(new TextEncoder().encode(token)));
 
   // save token to database
   await prisma.passwordResetToken.create({

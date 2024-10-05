@@ -2,10 +2,9 @@
 
 import prisma from '@/lib/prisma';
 import { signUpSchema, SignUpValues } from '@/lib/validation';
-import { hash } from '@node-rs/argon2';
 import { User } from 'lucia';
 import { sendEmailVerificationCode } from '../verify-email/actions';
-import { getUserByEmail } from '@/data/users';
+import { getUserByEmail, hashPassword } from '@/data/users';
 
 export async function signUp(
   credentials: SignUpValues
@@ -13,12 +12,7 @@ export async function signUp(
   try {
     const { email, password } = signUpSchema.parse(credentials);
 
-    const passwordHash = await hash(password, {
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1,
-    });
+    const passwordHash = await hashPassword(password);
 
     const existingEmail = await getUserByEmail(email);
     if (existingEmail) {

@@ -6,9 +6,7 @@ import { redirect } from 'next/navigation';
 
 export async function logout() {
   const { session } = await auth();
-  if (!session) {
-    throw new Error('Unauthorized');
-  }
+  if (!session) throw Error('Unauthorized');
 
   await lucia.invalidateSession(session.id);
 
