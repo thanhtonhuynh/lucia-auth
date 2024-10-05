@@ -17,7 +17,6 @@ import { signUp } from './actions';
 import { PasswordInput } from '@/components/PasswordInput';
 import { LoadingButton } from '@/components/LoadingButton';
 import { ErrorMessage } from '@/components/Message';
-import { useRouter } from 'next/navigation';
 
 export function SignUpForm() {
   const [error, setError] = useState<string>();
@@ -29,16 +28,13 @@ export function SignUpForm() {
       password: '',
     },
   });
-  const router = useRouter();
 
   async function onSubmit(values: SignUpValues) {
     setError(undefined);
     startTransition(async () => {
-      const { error, success, user } = await signUp(values);
+      const { error } = await signUp(values);
 
       if (error) setError(error);
-      if (success)
-        router.push(`/verify-email?email=${user?.email}&redirectFrom=signup`);
     });
   }
 

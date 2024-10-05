@@ -1,22 +1,16 @@
 import prisma from '@/lib/prisma';
-import { User } from 'lucia';
 
-export async function verifyVerificationCode(user: User, code: string) {
+export async function verifyVerificationCode(userId: string, code: string) {
   const databaseCode = await prisma.verificationCode.findFirst({
-    where: {
-      userId: user.id,
-      expiresAt: { gte: new Date() },
-    },
+    where: { userId, code },
   });
 
-  if (databaseCode)
-    await prisma.verificationCode.delete({ where: { userId: user.id } });
+  if (!databaseCode) {
+    return false;
+  }
 
-  if (
-    !databaseCode ||
-    databaseCode.code !== code ||
-    databaseCode.email !== user.email
-  ) {
+  await prisma.verificationCode.delete({ where: { userId: userId } });
+  if (databaseCode.expiresAt < new Date()) {
     return false;
   }
 

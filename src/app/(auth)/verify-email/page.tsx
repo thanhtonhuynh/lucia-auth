@@ -31,7 +31,7 @@ export default async function Page({
           />
         )}
 
-        <VerifyEmailForm user={user} />
+        <VerifyEmailForm userId={user.id} email={user.email} />
       </div>
     </main>
   );

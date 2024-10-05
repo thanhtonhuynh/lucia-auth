@@ -5,11 +5,15 @@ import { signUpSchema, SignUpValues } from '@/lib/validation';
 import { User } from 'lucia';
 import { sendEmailVerificationCode } from '../verify-email/actions';
 import { getUserByEmail, hashPassword } from '@/data/users';
+import { redirect } from 'next/navigation';
+import { isRedirectError } from 'next/dist/client/components/redirect';
+import { rateLimitByIp } from '@/lib/limiter';
+import { RateLimitError } from '@/lib/errors';
 
-export async function signUp(
-  credentials: SignUpValues
-): Promise<{ error?: string; success?: boolean; user?: User }> {
+export async function signUp(credentials: SignUpValues) {
   try {
+    await rateLimitByIp({ key: 'signup', limit: 1, window: 10000 });
+
     const { email, password } = signUpSchema.parse(credentials);
 
     const passwordHash = await hashPassword(password);
@@ -29,8 +33,14 @@ export async function signUp(
 
     await sendEmailVerificationCode(user.id, email);
 
-    return { success: true, user };
+    redirect(`/verify-email?email=${user.email}&redirectFrom=signup`);
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+    if (error instanceof RateLimitError) {
+      return { error: 'Too many attempts. Please try again later.' };
+    }
     console.error(error);
     return { error: 'Something went wrong. Please try again.' };
   }

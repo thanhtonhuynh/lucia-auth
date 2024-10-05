@@ -18,6 +18,7 @@ import { LoadingButton } from '@/components/LoadingButton';
 import { sendPasswordResetEmail } from './actions';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export function ForgotPasswordForm() {
   const [isPending, startTransition] = useTransition();
@@ -30,11 +31,15 @@ export function ForgotPasswordForm() {
 
   async function onSubmit(values: ForgotPasswordValues) {
     startTransition(async () => {
-      await sendPasswordResetEmail(values).then(() => {
-        toast.success(
-          "If an account with that email exists, we've sent you an email with a link to reset your password."
-        );
-      });
+      const { error } = await sendPasswordResetEmail(values);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+
+      toast.success(
+        "If an account with that email exists, we've sent you an email with a link to reset your password."
+      );
     });
   }
 
@@ -59,8 +64,11 @@ export function ForgotPasswordForm() {
           Send password reset email
         </LoadingButton>
 
-        <Button className="w-full" variant={'outline'} asChild>
-          <Link href={'/login'}>Back to login</Link>
+        <Button className="w-full gap-1" variant={'outline'} asChild>
+          <Link href={'/login'}>
+            <ArrowLeft size={15} />
+            Back to Login
+          </Link>
         </Button>
       </form>
     </Form>

@@ -21,7 +21,6 @@ import {
 import { LoadingButton } from '@/components/LoadingButton';
 import { ErrorMessage } from '@/components/Message';
 import { useEffect, useState, useTransition } from 'react';
-import { User } from 'lucia';
 import {
   sendEmailVerificationCode,
   verifyEmail,
@@ -31,10 +30,11 @@ import { useCountdown } from 'usehooks-ts';
 import { toast } from 'sonner';
 
 type VerifyEmailFormProps = {
-  user: User;
+  userId: string;
+  email: string;
 };
 
-export function VerifyEmailForm({ user }: VerifyEmailFormProps) {
+export function VerifyEmailForm({ userId, email }: VerifyEmailFormProps) {
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
   const form = useForm<VerificationCodeValues>({
@@ -43,7 +43,7 @@ export function VerifyEmailForm({ user }: VerifyEmailFormProps) {
       code: '',
     },
   });
-  const countStart = 61;
+  const countStart = 3;
   const [count, { startCountdown, resetCountdown }] = useCountdown({
     countStart: countStart,
     intervalMs: 1000,
@@ -56,17 +56,17 @@ export function VerifyEmailForm({ user }: VerifyEmailFormProps) {
   async function onSubmit(values: VerificationCodeValues) {
     setError(undefined);
     startTransition(async () => {
-      const { error } = await verifyEmail(values, user);
+      const { error } = await verifyEmail(values, userId);
 
       if (error) setError(error);
     });
   }
 
   async function handleResendCode() {
-    toast.promise(sendEmailVerificationCode(user.id, user.email!), {
+    toast.promise(sendEmailVerificationCode(userId, email), {
       loading: 'Sending verification code...',
       success: 'Verification code resent! Please check your inbox.',
-      error: 'Something went wrong. Please try again.',
+      error: (err) => `${err.message}`,
     });
     startCountdown();
   }

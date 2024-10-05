@@ -50,8 +50,6 @@ model VerificationCode {
   code      String
   email     String
   expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -61,8 +59,6 @@ model PasswordResetToken {
   tokenHash String   @id @map("_id")
   userId    String   @unique @db.ObjectId
   expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

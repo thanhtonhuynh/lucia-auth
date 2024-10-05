@@ -14,70 +14,77 @@ import VerificationCodeEmail from '@/components/email/VerificationCodeEmail';
 import { setSession } from '@/lib/session';
 import { verifyVerificationCode } from '@/data/verify-email';
 import { getUserByEmail, updateUser } from '@/data/users';
+import { rateLimitByKey } from '@/lib/limiter';
+import { GenericError, RateLimitError } from '@/lib/errors';
 
 export async function verifyEmail(
   values: VerificationCodeValues,
-  user: User
+  userId: string
 ): Promise<{ error?: string }> {
   try {
+    await rateLimitByKey({ key: userId, limit: 3, window: 10000 });
+
     const { code } = verificationCodeSchema.parse(values);
 
-    const validCode = await verifyVerificationCode(user, code);
+    const validCode = await verifyVerificationCode(userId, code);
     if (!validCode) {
-      return { error: 'Invalid verification code' };
+      return { error: 'Invalid verification code. Please try again.' };
     }
 
-    await updateUser(user.id, { emailVerified: true });
+    await updateUser(userId, { emailVerified: true });
 
-    await setSession(user.id);
+    await setSession(userId);
   } catch (error) {
+    if (error instanceof RateLimitError) {
+      return { error: 'Too many attempts. Please try again later.' };
+    }
     console.error(error);
-    return { error: 'Something went wrong. Please try again.' };
+    return { error: 'Something went wrong.' };
   }
 
   redirect('/');
 }
 
 export async function sendEmailVerificationCode(userId: string, email: string) {
-  const user = await getUserByEmail(email);
-  if (!user || user.email !== email || user.emailVerified) {
-    throw new Error('Invalid request');
+  try {
+    await rateLimitByKey({ key: email, limit: 1, window: 60000 });
+
+    const user = await getUserByEmail(email);
+    if (!user || user.email !== email || user.emailVerified) {
+      throw new GenericError('Invalid request');
+    }
+
+    const code = generateRandomString(6, alphabet('0-9'));
+
+    await prisma.verificationCode.upsert({
+      where: { userId },
+      create: {
+        userId,
+        email,
+        code,
+        expiresAt: new Date(Date.now() + 3000), // 10 minutes
+      },
+      update: {
+        code,
+        expiresAt: new Date(Date.now() + 3000), // 10 minutes
+      },
+    });
+
+    const emailHtml = await render(<VerificationCodeEmail code={code} />);
+
+    await sendEmail({
+      to: email,
+      subject: 'Email Verification Code',
+      html: emailHtml,
+    });
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      throw Error('You can only request a verification code once per minute.');
+    } else if (error instanceof GenericError) {
+      throw error;
+    } else {
+      console.log(error);
+      throw Error('Something went wrong.');
+    }
   }
-
-  // Check if a code was sent in the last minute
-  const lastCode = await prisma.verificationCode.findFirst({
-    where: { userId },
-  });
-  if (
-    lastCode &&
-    new Date(lastCode.updatedAt) > new Date(Date.now() - 1000 * 60) &&
-    new Date(lastCode.updatedAt).getTime() !==
-      new Date(lastCode.createdAt).getTime()
-  ) {
-    throw new Error('Email sent in the last minute');
-  }
-
-  const code = generateRandomString(6, alphabet('0-9'));
-
-  await prisma.verificationCode.upsert({
-    where: { userId },
-    create: {
-      userId,
-      email,
-      code,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 10), // 10 minutes
-    },
-    update: {
-      code,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 10), // 10 minutes
-    },
-  });
-
-  const emailHtml = await render(<VerificationCodeEmail code={code} />);
-
-  await sendEmail({
-    to: email,
-    subject: 'Email Verification Code',
-    html: emailHtml,
-  });
 }
